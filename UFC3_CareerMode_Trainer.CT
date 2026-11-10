@@ -1,0 +1,1021 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CheatTable CheatEngineTableVersion="45">
+  <CheatEntries>
+    <CheatEntry>
+      <ID>100</ID>
+      <Description>"[1] MONEY — Career Funds ($10,000,000)"</Description>
+      <Options moHideChildren="0"/>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>101</ID>
+          <Description>"Career Money = $10,000,000  [Toggle ON/OFF: NUMPAD 4]"</Description>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+{$lua}
+if syntaxcheck then return end
+if not UFC3_SetMoney(true) then UFC3_Fail(101) end
+{$asm}
+
+[DISABLE]
+{$lua}
+if syntaxcheck then return end
+UFC3_SetMoney(false)
+{$asm}
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>200</ID>
+      <Description>"[2] UNLIMITED STAMINA — Fight Stamina Control"</Description>
+      <Options moHideChildren="0"/>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>201</ID>
+          <Description>"[Master Hook] Stamina Core Engine (Auto-Managed)"</Description>
+          <Options moHideChildren="0"/>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+aobscanmodule(MC_HOOK,ucrtbase.dll,C3 8B 0A 89 08 C3 90)
+alloc(MC_mem,$100,MC_HOOK)
+alloc(MC_code,$200,MC_HOOK)
+label(st_do_lock)
+label(st_done)
+registersymbol(MC_mem)
+registersymbol(MC_HOOK)
+
+// MC_mem layout:
+// +00: Lock status (1 = ON, 0 = OFF)
+// +04: Target side (1 = Left, 0 = Right, -1 = Both)
+MC_mem:
+  dd 1
+  dd 1
+
+MC_code:
+  mov ecx,[rdx]
+  pushfq
+  // 1. Make sure the caller is the attribute function at 800098B47
+  mov r10,800098B47
+  cmp [rsp+48],r10
+  jne st_done
+  // 2. Make sure RBX == 0x20 (main stats buffer)
+  cmp qword ptr [rsp+30],20
+  jne st_done
+  // 3. Make sure the float value is in the stamina range (15.0 to 100.0)
+  cmp ecx,41700000
+  jb st_done
+  cmp ecx,42C80000
+  ja st_done
+  // 4. Check whether the lock is active
+  cmp dword ptr [MC_mem],1
+  jne st_done
+
+  // Check the target fighter side
+  cmp dword ptr [MC_mem+04],-1
+  je st_do_lock
+  cmp r13d,[MC_mem+04]
+  jne st_done
+
+st_do_lock:
+  mov ecx,42C80000
+  mov [rdx],ecx
+
+st_done:
+  popfq
+  mov [rax],ecx
+  ret
+
+MC_HOOK+1:
+  jmp MC_code
+
+[DISABLE]
+MC_HOOK+1:
+  db 8B 0A 89 08 C3
+unregistersymbol(MC_HOOK)
+unregistersymbol(MC_mem)
+dealloc(MC_mem)
+dealloc(MC_code)
+</AssemblerScript>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>202</ID>
+              <Description>"Stamina: Left Fighter  [Toggle ON/OFF: NUMPAD 1]"</Description>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+{$lua}
+if syntaxcheck then return end
+if not UFC3_FromSubEntry('LEFT', true) then UFC3_Fail(202) end
+{$asm}
+
+[DISABLE]
+{$lua}
+if syntaxcheck then return end
+UFC3_FromSubEntry('LEFT', false)
+{$asm}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>203</ID>
+              <Description>"Stamina: Right Fighter  [Toggle ON/OFF: NUMPAD 2]"</Description>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+{$lua}
+if syntaxcheck then return end
+if not UFC3_FromSubEntry('RIGHT', true) then UFC3_Fail(203) end
+{$asm}
+
+[DISABLE]
+{$lua}
+if syntaxcheck then return end
+UFC3_FromSubEntry('RIGHT', false)
+{$asm}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>204</ID>
+              <Description>"Stamina: Both Fighters  [Toggle ON/OFF: NUMPAD 3]"</Description>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+{$lua}
+if syntaxcheck then return end
+if not UFC3_FromSubEntry('BOTH', true) then UFC3_Fail(204) end
+{$asm}
+
+[DISABLE]
+{$lua}
+if syntaxcheck then return end
+UFC3_FromSubEntry('BOTH', false)
+{$asm}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>205</ID>
+              <Description>"Stamina: OFF / Force Reset  [NUMPAD 0]"</Description>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+{$lua}
+if syntaxcheck then return end
+UFC3_SetStamina('OFF')
+-- Auto-uncheck this reset trigger entry cleanly
+local r = getAddressList().getMemoryRecordByID(205)
+if r then
+  createTimer(1, function(t)
+    t.destroy()
+    r.Active = false
+  end)
+end
+{$asm}
+
+[DISABLE]
+{$lua}
+if syntaxcheck then return end
+{$asm}
+</AssemblerScript>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>206</ID>
+              <Description>"Lock Status (1 = ON, 0 = OFF)"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="0" DisplayValueAsItem="1">1:ON (Locked at 100%)
+0:OFF (Normal)
+</DropDownList>
+              <ShowAsSigned>0</ShowAsSigned>
+              <VariableType>4 Bytes</VariableType>
+              <Address>MC_mem</Address>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>207</ID>
+              <Description>"Target Fighter (1 = Left, 0 = Right, -1 = Both)"</Description>
+              <DropDownList ReadOnly="1" DescriptionOnly="0" DisplayValueAsItem="1">1:Left side (ID = 1)
+0:Right side (ID = 0)
+-1:Both fighters
+</DropDownList>
+              <ShowAsSigned>1</ShowAsSigned>
+              <VariableType>4 Bytes</VariableType>
+              <Address>MC_mem+4</Address>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>300</ID>
+      <Description>"[3] WEEKLY POINTS — Training Camp Points (100 Pts)"</Description>
+      <Options moHideChildren="0"/>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>301</ID>
+          <Description>"Unlimited Weekly Points = 100  [Toggle ON/OFF: NUMPAD 5]"</Description>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+{$lua}
+if syntaxcheck then return end
+if not UFC3_SetWeekly(true) then UFC3_Fail(301) end
+{$asm}
+
+[DISABLE]
+{$lua}
+if syntaxcheck then return end
+UFC3_SetWeekly(false)
+{$asm}
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>400</ID>
+      <Description>"[4] FITNESS — Fighter Peak Conditioning (100%)"</Description>
+      <Options moHideChildren="0"/>
+      <GroupHeader>1</GroupHeader>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>401</ID>
+          <Description>"Max Fighter Fitness = 100%  [Toggle ON/OFF: NUMPAD 6]"</Description>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>[ENABLE]
+{$lua}
+if syntaxcheck then return end
+if not UFC3_SetFitness(true) then UFC3_Fail(401) end
+{$asm}
+
+[DISABLE]
+{$lua}
+if syntaxcheck then return end
+UFC3_SetFitness(false)
+{$asm}
+</AssemblerScript>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+  </CheatEntries>
+  <LuaScript>-- ============================================================================
+-- UFC 3 CAREER MODE TRAINER — CONSOLIDATED EDITION (V2: SINGLE-KEY TOGGLE)
+-- Lightweight, Event-Driven Controller + Top-Left In-Game Overlay
+-- Overlay: the big feature box appears on every key press and hides itself after
+-- a few seconds (Trainer.boxSeconds). The active-features bar stays on screen
+-- while at least one cheat is active.
+-- ============================================================================
+
+-- Cleanup any previous trainer instance to prevent duplicate hotkeys or forms
+if _G.UFC3_Trainer_Cleanup then
+  pcall(_G.UFC3_Trainer_Cleanup)
+end
+
+local Trainer = {
+  boxSeconds = 3,      -- how long the big feature box stays on screen after a key press (seconds)
+  hideTimer = nil,
+  hotkeys = {},
+  activeList = {},     -- Ordered array of { key = '...', label = '...' }
+  state = {
+    money = false,
+    weekly = false,
+    fitness = false,
+    staminaMode = 'OFF' -- 'OFF', 'LEFT', 'RIGHT', 'BOTH'
+  },
+  syncingStamina = false,
+  mainForm = nil,
+  statusForm = nil,
+  statusLabel = nil,
+  rowBadges = {}
+}
+
+-- ============================================================================
+-- 1. ORDERED ACTIVE CHEAT LIST MANAGEMENT
+-- ============================================================================
+local function setCheatActiveStatus(key, isActive, displayLabel)
+  local existingIdx = nil
+  for i = 1, #Trainer.activeList do
+    if Trainer.activeList[i].key == key then
+      existingIdx = i
+      break
+    end
+  end
+
+  if isActive then
+    if existingIdx then
+      -- Already active: update label in-place (e.g., Stamina target side change)
+      Trainer.activeList[existingIdx].label = displayLabel
+    else
+      -- Newly activated (or re-activated after deactivation): append to end
+      table.insert(Trainer.activeList, { key = key, label = displayLabel })
+    end
+  else
+    if existingIdx then
+      table.remove(Trainer.activeList, existingIdx)
+    end
+  end
+end
+
+-- ============================================================================
+-- 2. TOP-LEFT PROFESSIONAL OVERLAY &amp; HORIZONTAL ACTIVE STATUS BAR
+-- ============================================================================
+local function measureText(canvas, text)
+  local w = canvas.getTextWidth(text)
+  local h = canvas.getTextHeight(text)
+  return w, h
+end
+
+local function updateOverlay()
+  if not Trainer.mainForm or not Trainer.statusForm then return end
+
+  -- Update badge indicators inside Main Overlay Frame
+  if Trainer.rowBadges.money then
+    if Trainer.state.money then
+      Trainer.rowBadges.money.Caption = 'ON'
+      Trainer.rowBadges.money.Font.Color = 0x76E600 -- Bright green (BGR)
+    else
+      Trainer.rowBadges.money.Caption = 'OFF'
+      Trainer.rowBadges.money.Font.Color = 0x8C8278 -- Muted slate (BGR)
+    end
+  end
+
+  if Trainer.rowBadges.stamina then
+    if Trainer.state.staminaMode ~= 'OFF' then
+      Trainer.rowBadges.stamina.Caption = Trainer.state.staminaMode
+      Trainer.rowBadges.stamina.Font.Color = 0x76E600
+    else
+      Trainer.rowBadges.stamina.Caption = 'OFF'
+      Trainer.rowBadges.stamina.Font.Color = 0x8C8278
+    end
+  end
+
+  if Trainer.rowBadges.weekly then
+    if Trainer.state.weekly then
+      Trainer.rowBadges.weekly.Caption = 'ON'
+      Trainer.rowBadges.weekly.Font.Color = 0x76E600
+    else
+      Trainer.rowBadges.weekly.Caption = 'OFF'
+      Trainer.rowBadges.weekly.Font.Color = 0x8C8278
+    end
+  end
+
+  if Trainer.rowBadges.fitness then
+    if Trainer.state.fitness then
+      Trainer.rowBadges.fitness.Caption = 'ON'
+      Trainer.rowBadges.fitness.Font.Color = 0x76E600
+    else
+      Trainer.rowBadges.fitness.Caption = 'OFF'
+      Trainer.rowBadges.fitness.Font.Color = 0x8C8278
+    end
+  end
+
+  -- Update Horizontal Active Cheat Status Bar below Main Frame
+  local count = #Trainer.activeList
+  if count == 0 then
+    Trainer.statusForm.Visible = false
+  else
+    local parts = {}
+    for i = 1, count do
+      parts[i] = Trainer.activeList[i].label
+    end
+    local horizontalText = table.concat(parts, ' | ')
+    Trainer.statusLabel.Caption = horizontalText
+
+    Trainer.statusForm.Canvas.Font.assign(Trainer.statusLabel.Font)
+    local tw, th = measureText(Trainer.statusForm.Canvas, horizontalText)
+    local lblW = math.max(Trainer.statusLabel.Width, tw)
+    local lblH = math.max(Trainer.statusLabel.Height, th)
+
+    local padX = 14
+    local padY = 8
+    Trainer.statusLabel.Left = padX
+    Trainer.statusLabel.Top = padY
+
+    Trainer.statusForm.Width = lblW + (padX * 2) + 4
+    Trainer.statusForm.Height = lblH + (padY * 2)
+    -- Directly below the big box while it is visible; otherwise it takes the box's place.
+    local topY = Trainer.mainForm.Top
+    if Trainer.mainForm.Visible then
+      topY = Trainer.mainForm.Top + Trainer.mainForm.Height + 6
+    end
+    Trainer.statusForm.Left = Trainer.mainForm.Left
+    Trainer.statusForm.Top = topY
+    Trainer.statusForm.Visible = true
+    Trainer.statusForm.repaint()
+  end
+end
+
+local function createTrainerOverlay()
+  -- 1. Main Overlay Frame (Top-Left Corner)
+  local mf = createForm(false)
+  mf.BorderStyle = 'bsNone'
+  mf.FormStyle = 'fsStayOnTop'
+  mf.Position = 'poDesigned'
+  mf.Left = 20
+  mf.Top = 20
+  mf.Color = 0x181310 -- Deep obsidian dark background (BGR)
+  mf.AlphaBlend = true
+  mf.AlphaBlendValue = 236
+
+  local padX = 16
+  local padY = 12
+  local colGap = 20
+  local rowGap = 6
+
+  -- Title Label
+  local lblTitle = createLabel(mf)
+  lblTitle.AutoSize = true
+  lblTitle.Transparent = true
+  lblTitle.Font.Name = 'Segoe UI'
+  lblTitle.Font.Size = 10
+  lblTitle.Font.Style = '[fsBold]'
+  lblTitle.Font.Color = 0x37AFD4 -- UFC Championship Gold (BGR)
+  lblTitle.Caption = 'UFC 3 CAREER MODE TRAINER'
+  lblTitle.Left = padX
+  lblTitle.Top = padY
+
+  mf.Canvas.Font.assign(lblTitle.Font)
+  local titleW, titleH = measureText(mf.Canvas, lblTitle.Caption)
+  titleW = math.max(lblTitle.Width, titleW)
+  titleH = math.max(lblTitle.Height, titleH)
+
+  local rowsSpec = {
+    { id = 'stamina', name = 'Unlimited Stamina', keys = 'NUM 1: L | 2: R | 3: Both | 0: OFF' },
+    { id = 'money',   name = 'Money ($10M)',      keys = 'NUM 4: Toggle ON / OFF' },
+    { id = 'weekly',  name = 'Weekly Points',     keys = 'NUM 5: Toggle ON / OFF' },
+    { id = 'fitness', name = 'Fighter Fitness',   keys = 'NUM 6: Toggle ON / OFF' }
+  }
+
+  local rowControls = {}
+  local maxNameW = 0
+  local maxKeysW = 0
+  local maxBadgeW = 0
+  local rowH = 0
+
+  -- Measure sample badge width ("RIGHT" is widest state)
+  for i = 1, #rowsSpec do
+    local spec = rowsSpec[i]
+
+    local lName = createLabel(mf)
+    lName.AutoSize = true
+    lName.Transparent = true
+    lName.Font.Name = 'Segoe UI'
+    lName.Font.Size = 9
+    lName.Font.Style = '[fsBold]'
+    lName.Font.Color = 0xF2ECE6 -- Crisp off-white
+    lName.Caption = spec.name
+
+    local lKeys = createLabel(mf)
+    lKeys.AutoSize = true
+    lKeys.Transparent = true
+    lKeys.Font.Name = 'Consolas'
+    lKeys.Font.Size = 9
+    lKeys.Font.Style = '[]'
+    lKeys.Font.Color = 0xD0B8A0 -- Soft ice-blue (BGR)
+    lKeys.Caption = spec.keys
+
+    local lBadge = createLabel(mf)
+    lBadge.AutoSize = true
+    lBadge.Transparent = true
+    lBadge.Font.Name = 'Consolas'
+    lBadge.Font.Size = 9
+    lBadge.Font.Style = '[fsBold]'
+    lBadge.Font.Color = 0x8C8278
+    lBadge.Caption = 'RIGHT'
+
+    mf.Canvas.Font.assign(lName.Font)
+    local nw, nh = measureText(mf.Canvas, lName.Caption)
+    nw = math.max(lName.Width, nw)
+    nh = math.max(lName.Height, nh)
+
+    mf.Canvas.Font.assign(lKeys.Font)
+    local kw, kh = measureText(mf.Canvas, lKeys.Caption)
+    kw = math.max(lKeys.Width, kw)
+    kh = math.max(lKeys.Height, kh)
+
+    mf.Canvas.Font.assign(lBadge.Font)
+    local bw, bh = measureText(mf.Canvas, 'RIGHT')
+    bw = math.max(lBadge.Width, bw)
+    bh = math.max(lBadge.Height, bh)
+
+    lBadge.Caption = 'OFF'
+
+    if nw &gt; maxNameW then maxNameW = nw end
+    if kw &gt; maxKeysW then maxKeysW = kw end
+    if bw &gt; maxBadgeW then maxBadgeW = bw end
+    local maxH = math.max(nh, math.max(kh, bh))
+    if maxH &gt; rowH then rowH = maxH end
+
+    rowControls[i] = { lName = lName, lKeys = lKeys, lBadge = lBadge, id = spec.id }
+    Trainer.rowBadges[spec.id] = lBadge
+  end
+
+  local dividerY = padY + titleH + 8
+  local curY = dividerY + 10
+
+  local colNameX = padX
+  local colKeysX = colNameX + maxNameW + colGap
+  local colBadgeX = colKeysX + maxKeysW + colGap
+
+  for i = 1, #rowControls do
+    local rc = rowControls[i]
+    rc.lName.Left = colNameX
+    rc.lName.Top = curY
+    rc.lKeys.Left = colKeysX
+    rc.lKeys.Top = curY
+    rc.lBadge.Left = colBadgeX
+    rc.lBadge.Top = curY
+    curY = curY + rowH + rowGap
+  end
+
+  local contentW = (colBadgeX + maxBadgeW) - padX
+  local finalW = padX + math.max(titleW, contentW) + padX + 4
+  local finalH = curY - rowGap + padY
+
+  mf.Width = finalW
+  mf.Height = finalH
+
+  mf.OnPaint = function(sender)
+    local c = sender.Canvas
+    local w = sender.Width
+    local h = sender.Height
+    -- Outer border
+    c.Pen.Color = 0x4E3E30
+    c.Pen.Width = 1
+    c.Brush.Style = 'bsClear'
+    c.rectangle(0, 0, w, h)
+    -- Top gold accent line (3px)
+    c.Brush.Style = 'bsSolid'
+    c.Brush.Color = 0x37AFD4
+    c.fillRect(1, 1, w - 1, 4)
+    -- Header divider line
+    c.Pen.Color = 0x362B22
+    c.line(padX, dividerY, w - padX, dividerY)
+  end
+
+  -- 2. Horizontal Active Cheat Status Frame (Directly Below Main Overlay Frame)
+  local sf = createForm(false)
+  sf.BorderStyle = 'bsNone'
+  sf.FormStyle = 'fsStayOnTop'
+  sf.Position = 'poDesigned'
+  sf.Left = mf.Left
+  sf.Top = mf.Top + mf.Height + 6
+  sf.Color = 0x181310
+  sf.AlphaBlend = true
+  sf.AlphaBlendValue = 236
+
+  local sLabel = createLabel(sf)
+  sLabel.AutoSize = true
+  sLabel.Transparent = true
+  sLabel.Font.Name = 'Segoe UI'
+  sLabel.Font.Size = 9
+  sLabel.Font.Style = '[fsBold]'
+  sLabel.Font.Color = 0x55E6A0 -- Vibrant emerald-mint text for active status (BGR)
+  sLabel.Caption = ''
+  sLabel.Left = 14
+  sLabel.Top = 8
+
+  sf.OnPaint = function(sender)
+    local c = sender.Canvas
+    local w = sender.Width
+    local h = sender.Height
+    c.Pen.Color = 0x37AFD4 -- Gold border highlight for active cheat bar
+    c.Pen.Width = 1
+    c.Brush.Style = 'bsClear'
+    c.rectangle(0, 0, w, h)
+  end
+
+  Trainer.mainForm = mf
+  Trainer.statusForm = sf
+  Trainer.statusLabel = sLabel
+
+  -- Auto-hide timer for the big box (the active-features bar is NOT affected by it)
+  local ht = createTimer(nil, false)
+  ht.Interval = math.floor(Trainer.boxSeconds * 1000)
+  ht.OnTimer = function(tm)
+    tm.Enabled = false
+    pcall(function()
+      if Trainer.mainForm then Trainer.mainForm.Visible = false end
+      updateOverlay()
+    end)
+  end
+  Trainer.hideTimer = ht
+
+  mf.Visible = false
+  sf.Visible = false
+end
+
+-- Show the big feature box, then hide it again after Trainer.boxSeconds.
+-- The active-features bar stays visible for as long as any cheat is active.
+local function showMainBox()
+  if not Trainer.mainForm then return end
+  Trainer.mainForm.Visible = true
+  pcall(function() Trainer.mainForm.repaint() end)
+  if Trainer.hideTimer then
+    Trainer.hideTimer.Enabled = false
+    Trainer.hideTimer.Enabled = true
+  end
+  updateOverlay()
+end
+
+-- ============================================================================
+-- 3. SHARED BITFIELD HOOK MANAGER (RESOLVES 8012C0E10 COLLISION)
+--    Coordinates Money (Hook 1), Weekly Points, and Fitness independently
+-- ============================================================================
+local function ensureBitfieldHookInstalled()
+  if getAddressSafe('BF_FLAGS') ~= nil then
+    return true
+  end
+
+  local script = [[
+aobscanregion(BF_INJ,8012C0000,8012C1000,C4 E2 40 F2 0C 06 44 09 C9 89 0C 06 C3)
+alloc(BF_MEM,$200,BF_INJ)
+label(BF_FLAGS)
+label(BF_CODE)
+label(bf_not_money)
+label(bf_check_weekly)
+label(bf_check_fitness)
+label(bf_store)
+registersymbol(BF_INJ)
+registersymbol(BF_MEM)
+registersymbol(BF_FLAGS)
+
+BF_MEM:
+BF_FLAGS:
+  dd 0
+  dd 0
+  dd 0
+
+BF_CODE:
+  // 1. Money bitfield check (rsi=64, edi=7FFFFFFF)
+  cmp dword ptr [BF_FLAGS],1
+  jne bf_not_money
+  cmp rsi,64
+  jne bf_not_money
+  cmp edi,7FFFFFFF
+  jne bf_not_money
+  or ecx,#10000000
+  jmp bf_store
+
+bf_not_money:
+  // Original instruction at BF_INJ+6 (8012C0E10): or ecx,r9d
+  or ecx,r9d
+
+bf_check_weekly:
+  // 2. Weekly Points check (mask 03FF0000 -> 100 pts)
+  cmp edi,03FF0000
+  jne bf_check_fitness
+  cmp dword ptr [BF_FLAGS+4],1
+  jne bf_store
+  and ecx,FC00FFFF
+  or ecx,00640000
+  jmp bf_store
+
+bf_check_fitness:
+  // 3. Fitness check (mask FFFE0000, edx=11 -> 100.00%)
+  cmp edi,FFFE0000
+  jne bf_store
+  cmp edx,11
+  jne bf_store
+  cmp dword ptr [BF_FLAGS+8],1
+  jne bf_store
+  and ecx,0001FFFF
+  or ecx,4E200000
+
+bf_store:
+  mov [rsi+rax],ecx
+  jmp BF_INJ+C
+
+BF_INJ+6:
+  jmp BF_CODE
+  nop
+]]
+  local ok = autoAssemble(script)
+  return ok == true
+end
+
+local function releaseBitfieldHookIfUnused()
+  local flagsAddr = getAddressSafe('BF_FLAGS')
+  if not flagsAddr then return end
+
+  local m = readInteger(flagsAddr) or 0
+  local w = readInteger(flagsAddr + 4) or 0
+  local f = readInteger(flagsAddr + 8) or 0
+
+  if m == 0 and w == 0 and f == 0 then
+    local disableScript = [[
+BF_INJ+6:
+  db 44 09 C9 89 0C 06
+unregistersymbol(BF_INJ)
+unregistersymbol(BF_MEM)
+unregistersymbol(BF_FLAGS)
+dealloc(BF_MEM)
+]]
+    pcall(autoAssemble, disableScript)
+  end
+end
+
+-- ============================================================================
+-- 4. INDEPENDENT CHEAT CONTROLLERS (MONEY, WEEKLY POINTS, FITNESS, STAMINA)
+-- ============================================================================
+
+-- [A] MONEY CONTROLLER ($10,000,000)
+function UFC3_SetMoney(enable)
+  if enable then
+    if not ensureBitfieldHookInstalled() then
+      return false
+    end
+    if getAddressSafe('money_h2') == nil then
+      local h2Enable = [[
+assert(801896B78,8B 45 A8 41 89 04 1F)
+alloc(money_h2,$100,801896B78)
+label(h2_skip)
+label(h2_return)
+registersymbol(money_h2)
+
+money_h2:
+  mov eax,[rbp-58]
+  cmp rbx,1A8
+  jne h2_skip
+  mov eax,#10000000
+h2_skip:
+  mov [r15+rbx],eax
+  jmp h2_return
+
+801896B78:
+  jmp money_h2
+  nop 2
+h2_return:
+]]
+      local ok = autoAssemble(h2Enable)
+      if not ok then
+        releaseBitfieldHookIfUnused()
+        return false
+      end
+    end
+    local flagsAddr = getAddressSafe('BF_FLAGS')
+    if flagsAddr then writeInteger(flagsAddr, 1) end
+    Trainer.state.money = true
+    setCheatActiveStatus('MONEY', true, 'Money')
+    showMainBox()
+    return true
+  else
+    local flagsAddr = getAddressSafe('BF_FLAGS')
+    if flagsAddr then writeInteger(flagsAddr, 0) end
+    if getAddressSafe('money_h2') ~= nil then
+      local h2Disable = [[
+801896B78:
+  db 8B 45 A8 41 89 04 1F
+unregistersymbol(money_h2)
+dealloc(money_h2)
+]]
+      pcall(autoAssemble, h2Disable)
+    end
+    releaseBitfieldHookIfUnused()
+    Trainer.state.money = false
+    setCheatActiveStatus('MONEY', false, nil)
+    showMainBox()
+    return true
+  end
+end
+
+-- [B] WEEKLY POINTS CONTROLLER (100 Points)
+function UFC3_SetWeekly(enable)
+  if enable then
+    if not ensureBitfieldHookInstalled() then
+      return false
+    end
+    local flagsAddr = getAddressSafe('BF_FLAGS')
+    if flagsAddr then writeInteger(flagsAddr + 4, 1) end
+    Trainer.state.weekly = true
+    setCheatActiveStatus('WEEKLY', true, 'Weekly Points')
+    showMainBox()
+    return true
+  else
+    local flagsAddr = getAddressSafe('BF_FLAGS')
+    if flagsAddr then writeInteger(flagsAddr + 4, 0) end
+    releaseBitfieldHookIfUnused()
+    Trainer.state.weekly = false
+    setCheatActiveStatus('WEEKLY', false, nil)
+    showMainBox()
+    return true
+  end
+end
+
+-- [C] FITNESS CONTROLLER (100% Conditioning)
+function UFC3_SetFitness(enable)
+  if enable then
+    if not ensureBitfieldHookInstalled() then
+      return false
+    end
+    local flagsAddr = getAddressSafe('BF_FLAGS')
+    if flagsAddr then writeInteger(flagsAddr + 8, 1) end
+    Trainer.state.fitness = true
+    setCheatActiveStatus('FITNESS', true, 'Fitness')
+    showMainBox()
+    return true
+  else
+    local flagsAddr = getAddressSafe('BF_FLAGS')
+    if flagsAddr then writeInteger(flagsAddr + 8, 0) end
+    releaseBitfieldHookIfUnused()
+    Trainer.state.fitness = false
+    setCheatActiveStatus('FITNESS', false, nil)
+    showMainBox()
+    return true
+  end
+end
+
+-- [D] STAMINA CONTROLLER (Left = 1, Right = 0, Both = -1, OFF = Reset &amp; Disable)
+local staminaConfig = {
+  LEFT  = { sideVal = 1,  label = 'Stamina (Left)',  recId = 202 },
+  RIGHT = { sideVal = 0,  label = 'Stamina (Right)', recId = 203 },
+  BOTH  = { sideVal = -1, label = 'Stamina (Both)',  recId = 204 }
+}
+
+local function syncStaminaSubCheckboxes(activeMode)
+  Trainer.syncingStamina = true
+  local al = getAddressList()
+  for modeName, cfg in pairs(staminaConfig) do
+    local rec = al.getMemoryRecordByID(cfg.recId)
+    if rec then
+      rec.Active = (modeName == activeMode)
+    end
+  end
+  Trainer.syncingStamina = false
+end
+
+function UFC3_SetStamina(mode)
+  local al = getAddressList()
+  local masterRec = al.getMemoryRecordByID(201)
+  if not masterRec then return false end
+
+  if mode == 'OFF' then
+    -- 1. Immediately disable stamina lock in memory if allocated
+    local m = getAddressSafe('MC_mem')
+    if m then
+      writeInteger(m, 0)
+    end
+    -- 2. Uncheck all side sub-entries cleanly
+    syncStaminaSubCheckboxes('OFF')
+    -- 3. Disable Master Stamina Hook to restore ucrtbase.dll and free memory
+    if masterRec.Active then
+      masterRec.Active = false
+    end
+    Trainer.state.staminaMode = 'OFF'
+    setCheatActiveStatus('STAMINA', false, nil)
+    showMainBox()
+    return true
+  end
+
+  local cfg = staminaConfig[mode]
+  if not cfg then return false end
+
+  -- 1. Activate Master Stamina Hook if not currently active
+  if not masterRec.Active then
+    masterRec.Active = true
+  end
+
+  -- 2. Verify MC_mem symbol is available and update target side immediately
+  local m = getAddressSafe('MC_mem')
+  if not m then
+    syncStaminaSubCheckboxes('OFF')
+    Trainer.state.staminaMode = 'OFF'
+    setCheatActiveStatus('STAMINA', false, nil)
+    showMainBox()
+    return false
+  end
+
+  writeInteger(m, 1)
+  writeInteger(m + 4, cfg.sideVal)
+
+  -- 3. Sync Cheat Table sub-entry checkboxes &amp; Overlay
+  syncStaminaSubCheckboxes(mode)
+  Trainer.state.staminaMode = mode
+  setCheatActiveStatus('STAMINA', true, cfg.label)
+  showMainBox()
+  return true
+end
+
+-- Toggle Stamina: press once = ON (that mode), press the same key again = OFF
+function UFC3_ToggleStamina(mode)
+  if Trainer.state.staminaMode == mode then
+    return UFC3_SetStamina('OFF')
+  else
+    return UFC3_SetStamina(mode)
+  end
+end
+
+function UFC3_FromSubEntry(mode, enable)
+  if Trainer.syncingStamina then return true end
+  if enable then
+    return UFC3_SetStamina(mode)
+  else
+    return UFC3_SetStamina('OFF')
+  end
+end
+
+-- Monitor Master Stamina Hook if user manually unchecks it in the table
+local function attachMasterHookWatcher()
+  local al = getAddressList()
+  local masterRec = al.getMemoryRecordByID(201)
+  if not masterRec then return end
+
+  masterRec.OnDeactivate = function(rec, before, currentstate)
+    if not before and not currentstate then
+      syncStaminaSubCheckboxes('OFF')
+      Trainer.state.staminaMode = 'OFF'
+      setCheatActiveStatus('STAMINA', false, nil)
+      showMainBox()
+    end
+    return true
+  end
+end
+
+-- ============================================================================
+-- 5. SINGLE-KEY TOGGLE NUMPAD HOTKEY REGISTRATION (CLICK 1 = ON, CLICK 2 = OFF)
+-- ============================================================================
+local function toggleRecordByID(id)
+  local al = getAddressList()
+  local rec = al.getMemoryRecordByID(id)
+  if rec then
+    pcall(function() rec.Active = not rec.Active end)
+  end
+end
+
+local function registerTrainerHotkeys()
+  local bindings = {
+    -- Unlimited Stamina Controls (Single-key toggle per mode + NUMPAD 0 Force Reset)
+    { key = VK_NUMPAD1, fn = function() UFC3_ToggleStamina('LEFT')  end },
+    { key = VK_NUMPAD2, fn = function() UFC3_ToggleStamina('RIGHT') end },
+    { key = VK_NUMPAD3, fn = function() UFC3_ToggleStamina('BOTH')  end },
+    { key = VK_NUMPAD0, fn = function() UFC3_SetStamina('OFF')      end },
+
+    -- Money Control (NUMPAD 4 = Toggle ON / OFF)
+    { key = VK_NUMPAD4, fn = function() toggleRecordByID(101) end },
+
+    -- Weekly Points Control (NUMPAD 5 = Toggle ON / OFF)
+    { key = VK_NUMPAD5, fn = function() toggleRecordByID(301) end },
+
+    -- Fitness Control (NUMPAD 6 = Toggle ON / OFF)
+    { key = VK_NUMPAD6, fn = function() toggleRecordByID(401) end }
+  }
+
+  for i = 1, #bindings do
+    local action = bindings[i].fn
+    local hk = createHotkey(function()
+      pcall(showMainBox)
+      pcall(action)
+    end, bindings[i].key)
+    table.insert(Trainer.hotkeys, hk)
+  end
+end
+
+_G.UFC3_Trainer_Cleanup = function()
+  for i = 1, #Trainer.hotkeys do
+    pcall(function() Trainer.hotkeys[i].destroy() end)
+  end
+  Trainer.hotkeys = {}
+  if Trainer.hideTimer then
+    pcall(function() Trainer.hideTimer.destroy() end)
+    Trainer.hideTimer = nil
+  end
+  if Trainer.statusForm then
+    pcall(function() Trainer.statusForm.destroy() end)
+    Trainer.statusForm = nil
+  end
+  if Trainer.mainForm then
+    pcall(function() Trainer.mainForm.destroy() end)
+    Trainer.mainForm = nil
+  end
+end
+
+-- Fail silently: untick the entry a moment later instead of raising an error.
+-- (An error would open the Lua Engine window or a dialog over the game.)
+function UFC3_Fail(id)
+  local t = createTimer(nil, false)
+  t.Interval = 150
+  t.OnTimer = function(tm)
+    tm.Enabled = false
+    pcall(function()
+      local mr = getAddressList().getMemoryRecordByID(id)
+      if mr and mr.Active then mr.Active = false end
+    end)
+    pcall(function() tm.destroy() end)
+  end
+  t.Enabled = true
+end
+
+-- Wrap the controllers so a Lua error can never surface as a window or dialog.
+local function guarded(fn)
+  return function(...)
+    local ok, res = pcall(fn, ...)
+    if ok then return res end
+    return false
+  end
+end
+UFC3_SetMoney      = guarded(UFC3_SetMoney)
+UFC3_SetWeekly     = guarded(UFC3_SetWeekly)
+UFC3_SetFitness    = guarded(UFC3_SetFitness)
+UFC3_SetStamina    = guarded(UFC3_SetStamina)
+UFC3_ToggleStamina = guarded(UFC3_ToggleStamina)
+UFC3_FromSubEntry  = guarded(UFC3_FromSubEntry)
+
+-- Initialize Trainer UI, Watchers, and Hotkeys
+createTrainerOverlay()
+attachMasterHookWatcher()
+registerTrainerHotkeys()
+updateOverlay()
+</LuaScript>
+</CheatTable>
